@@ -1,0 +1,3 @@
+name: malguem
+desc: Code template generator and management, written fully in Go.
+version: 1.0
