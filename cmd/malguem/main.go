@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"malguem/internal/command"
 	"malguem/internal/config"
 )
 
@@ -11,10 +11,10 @@ func main() {
 		panic(err)
 	}
 
-	appConfig, err := config.Read()
+	_, err = config.Read()
 	if err != nil {
 		panic(err)
 	}
 
-	println(fmt.Sprintf("Name: %s\nDesc: %s\nVersion: %s\n", appConfig.Name, appConfig.Desc, appConfig.Version))
+	command.Run()
 }
