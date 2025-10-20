@@ -14,7 +14,11 @@ var initialize = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize malguem in the project",
 	Run: func(cmd *cobra.Command, args []string) {
-		createMalguemFile()
+		err := createMalguemFile()
+		if err != nil {
+			fmt.Printf("Failed to initialize malguem inside your project: %v\n", err)
+			os.Exit(1)
+		}
 		fmt.Printf("🌤️  My name is Malguem, let's generate some code!")
 	},
 }
