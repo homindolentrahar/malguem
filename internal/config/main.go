@@ -1,6 +1,12 @@
 package config
 
-import "github.com/spf13/viper"
+import (
+	"malguem/internal/model"
+	"os"
+
+	"github.com/spf13/viper"
+	"go.yaml.in/yaml/v3"
+)
 
 func Init() error {
 	viper.AddConfigPath("./internal/config")
@@ -19,4 +25,19 @@ func Read() (*Model, error) {
 	}
 
 	return &model, err
+}
+
+func ReadMalguem() (*model.Malguem, error) {
+	file, err := os.ReadFile("malguem.yaml")
+	if err != nil {
+		return nil, err
+	}
+
+	var malguem model.Malguem
+	err = yaml.Unmarshal(file, &malguem)
+	if err != nil {
+		return nil, err
+	}
+
+	return &malguem, nil
 }

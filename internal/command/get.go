@@ -2,13 +2,12 @@ package command
 
 import (
 	"fmt"
-	"malguem/internal/model"
+	"malguem/internal/config"
 	"malguem/internal/remote"
 	"os"
 	"sync"
 
 	"github.com/spf13/cobra"
-	"go.yaml.in/yaml/v3"
 )
 
 var get = &cobra.Command{
@@ -16,7 +15,7 @@ var get = &cobra.Command{
 	Short: "Fetch template from remote source",
 	Run: func(cmd *cobra.Command, args []string) {
 		// Read malguem.yaml
-		malguem, err := readMalguem()
+		malguem, err := config.ReadMalguem()
 		if err != nil {
 			fmt.Printf("Failed to get templates: %v\n", err)
 			os.Exit(1)
@@ -58,19 +57,4 @@ var get = &cobra.Command{
 
 		fmt.Printf("\n✅  All templates updated. Happy coding!\n")
 	},
-}
-
-func readMalguem() (*model.Malguem, error) {
-	file, err := os.ReadFile("malguem.yaml")
-	if err != nil {
-		return nil, err
-	}
-
-	var malguem model.Malguem
-	err = yaml.Unmarshal(file, &malguem)
-	if err != nil {
-		return nil, err
-	}
-
-	return &malguem, nil
 }

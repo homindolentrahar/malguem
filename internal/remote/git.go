@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"malguem/internal/util"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,13 +13,11 @@ import (
 )
 
 func Clone(url string) (string, error) {
-	homeDir, err := os.UserHomeDir()
+	template := extractRepoName(url)
+	cacheDir, err := util.CacheDir()
 	if err != nil {
 		return "", err
 	}
-
-	template := extractRepoName(url)
-	cacheDir := filepath.Join(homeDir, ".malguem", "templates")
 	cachePath := filepath.Join(cacheDir, fmt.Sprintf("%s-%s", template, hashRepoUrl(url)))
 
 	// Make sure the cache directory exists

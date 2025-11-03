@@ -13,3 +13,14 @@ func CurrentDir() (string, error) {
 
 	return filepath.Base(dir), nil
 }
+
+func CacheDir() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	cacheDir := filepath.Join(homeDir, ".malguem", "templates")
+
+	return cacheDir, nil
+}
