@@ -26,7 +26,7 @@ func Clone(url string) (string, error) {
 
 	// Check if the template already cached
 	if _, err := os.Stat(cachePath); err == nil {
-		fmt.Printf("🔍  Pulling updates for template: %s\n", cachePath)
+		fmt.Printf("⬇️  Pulling updates for template: %s\n", cachePath)
 
 		branch, err := getDefaultBranch(cachePath)
 		if err != nil {
@@ -35,8 +35,6 @@ func Clone(url string) (string, error) {
 
 		cmd := exec.Command("git", "pull", "origin", branch)
 		cmd.Dir = cachePath
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
 
 		err = cmd.Run()
 		if err != nil {
@@ -50,8 +48,6 @@ func Clone(url string) (string, error) {
 	fmt.Printf("⏳  Cloning template into %s\n", cachePath)
 	cmd := exec.Command("git", "clone", url, cachePath)
 	cmd.Dir = cacheDir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
 		return "", fmt.Errorf("failed to clone template: %v\n", err)

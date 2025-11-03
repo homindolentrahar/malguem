@@ -3,4 +3,8 @@ templates:
   small-test-repo:
     github:
       url: https://github.com/rtyley/small-test-repo.git
-    output: ./template/nyang
+    output: ./template/small-test-repo
+  test-repo:
+    github:
+      url: https://github.com/zpqrtbnk/test-repo
+    output: ./template/test-repo

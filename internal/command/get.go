@@ -44,8 +44,6 @@ var get = &cobra.Command{
 						fmt.Printf("⚠️  Failed to get template from: %s\n", url)
 						continue
 					}
-
-					fmt.Printf("🗂️  Template location: %s\n", path)
 				}
 			}()
 		}
@@ -57,6 +55,8 @@ var get = &cobra.Command{
 		close(jobs)
 
 		wg.Wait()
+
+		fmt.Printf("\n✅  All templates updated. Happy coding!\n")
 	},
 }
 
