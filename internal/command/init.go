@@ -14,6 +14,7 @@ import (
 var initialize = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize malguem in the project",
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var projectName *string
 		if len(args) > 0 {

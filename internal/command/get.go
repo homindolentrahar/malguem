@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"malguem/internal/config"
 	"malguem/internal/remote"
+	"malguem/internal/util"
 	"os"
 	"sync"
 
@@ -22,8 +23,11 @@ var get = &cobra.Command{
 		}
 
 		var templateUrls []string
+		templateOutputs := make(map[string]string)
 		for _, info := range malguem.Templates {
-			templateUrls = append(templateUrls, info.Github.Url)
+			url := info.Github.Url
+			templateUrls = append(templateUrls, url)
+			templateOutputs[url] = info.Output
 		}
 
 		// Define the wait group
@@ -43,6 +47,9 @@ var get = &cobra.Command{
 						fmt.Printf("⚠️  Failed to get template from: %s\n", url)
 						continue
 					}
+					// Copy fetched template into output directory
+					output := templateOutputs[url]
+					copyTemplateIntoOutput(output, path)
 				}
 			}()
 		}
@@ -57,4 +64,12 @@ var get = &cobra.Command{
 
 		fmt.Printf("\n✅  All templates updated. Happy coding!\n")
 	},
+}
+
+func copyTemplateIntoOutput(outputPath, cachePath string) {
+	// Make sure the output path exists
+	os.MkdirAll(outputPath, os.ModePerm)
+
+	// Copy template from cachePath into outputPath
+	util.CopyDir(cachePath, outputPath)
 }
