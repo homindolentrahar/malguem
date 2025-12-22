@@ -5,6 +5,7 @@ import (
 	"malguem/internal/model"
 	"malguem/internal/util"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"go.yaml.in/yaml/v3"
@@ -14,18 +15,30 @@ var initialize = &cobra.Command{
 	Use:   "init",
 	Short: "Initialize malguem in the project",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := createMalguemFile()
+		var projectName *string
+		if len(args) > 0 {
+			projectName = &args[0]
+		}
+
+		err := createMalguemFile(projectName)
 		if err != nil {
 			fmt.Printf("Failed to initialize malguem inside your project: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("🌤️  My name is Malguem, let's generate some code!")
+		fmt.Printf("🌤️  I'm malguem, let's generate some code!")
 	},
 }
 
-func createMalguemFile() error {
+func createMalguemFile(projectName *string) error {
 	// Create malguem.yaml file
-	file, err := os.Create("malguem.yaml")
+	malguemPath := "malguem.yaml"
+	if projectName != nil {
+		// Create new directory
+		os.MkdirAll(*projectName, os.ModePerm)
+		malguemPath = filepath.Join(*projectName, malguemPath)
+	}
+
+	file, err := os.Create(malguemPath)
 	if err != nil {
 		return err
 	}
