@@ -1,6 +1,6 @@
 package config
 
-type Model struct {
+type Info struct {
 	Name    string `yaml:"name"`
 	Desc    string `yaml:"desc"`
 	Version string `yaml:"version"`

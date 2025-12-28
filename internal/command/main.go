@@ -14,6 +14,6 @@ func Run() {
 	root.CompletionOptions = cobra.CompletionOptions{
 		HiddenDefaultCmd: true,
 	}
-	root.AddCommand(initialize, new, get, list())
+	root.AddCommand(initialize, new, get, list(), makeCommand)
 	root.Execute()
 }

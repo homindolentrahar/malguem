@@ -16,15 +16,15 @@ func Init() error {
 	return viper.ReadInConfig()
 }
 
-func Read() (*Model, error) {
-	var model Model
+func Read() (*Info, error) {
+	var info Info
 
-	err := viper.Unmarshal(&model)
+	err := viper.Unmarshal(&info)
 	if err != nil {
 		return nil, err
 	}
 
-	return &model, err
+	return &info, err
 }
 
 func ReadMalguem() (*model.Malguem, error) {
@@ -40,4 +40,19 @@ func ReadMalguem() (*model.Malguem, error) {
 	}
 
 	return &malguem, nil
+}
+
+func ReadContract(path string) (*model.Contract, error) {
+	file, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var contract model.Contract
+	err = yaml.Unmarshal(file, &contract)
+	if err != nil {
+		return nil, err
+	}
+
+	return &contract, nil
 }

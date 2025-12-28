@@ -7,11 +7,11 @@ type Malguem struct {
 
 type Template struct {
 	Path   string  `yaml:"path,omitempty"`
-	Github *Source `yaml:"github,omitempty"`
+	Remote *Remote `yaml:"remote,omitempty"`
 	Output string  `yaml:"output,omitempty"`
 }
 
-type Source struct {
+type Remote struct {
 	Url  string `yaml:"url"`
 	Path string `yaml:"path"`
 	Ref  string `yaml:"ref"`

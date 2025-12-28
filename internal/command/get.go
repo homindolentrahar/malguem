@@ -25,9 +25,13 @@ var get = &cobra.Command{
 		var templateUrls []string
 		templateOutputs := make(map[string]string)
 		for _, info := range malguem.Templates {
-			url := info.Github.Url
+			if info.Remote == nil {
+				continue
+			}
+
+			url := info.Remote.Url
 			templateUrls = append(templateUrls, url)
-			templateOutputs[url] = info.Output
+			templateOutputs[url] = info.Path
 		}
 
 		// Define the wait group
@@ -49,7 +53,10 @@ var get = &cobra.Command{
 					}
 					// Copy fetched template into output directory
 					output := templateOutputs[url]
-					copyTemplateIntoOutput(output, path)
+					err = copyTemplateIntoOutput(output, path)
+					if err != nil {
+						continue
+					}
 				}
 			}()
 		}
@@ -66,10 +73,18 @@ var get = &cobra.Command{
 	},
 }
 
-func copyTemplateIntoOutput(outputPath, cachePath string) {
+func copyTemplateIntoOutput(outputPath, cachePath string) error {
 	// Make sure the output path exists
-	os.MkdirAll(outputPath, os.ModePerm)
+	err := os.MkdirAll(outputPath, os.ModePerm)
+	if err != nil {
+		return err
+	}
 
 	// Copy template from cachePath into outputPath
-	util.CopyDir(cachePath, outputPath)
+	err = util.CopyDir(cachePath, outputPath)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

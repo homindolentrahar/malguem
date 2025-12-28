@@ -1,2 +1,3 @@
 /internal/config/config.yaml
-/templates/
+/template/
+/out/

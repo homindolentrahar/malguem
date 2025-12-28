@@ -13,15 +13,15 @@ import (
 )
 
 func Clone(url string) (string, error) {
-	template := extractRepoName(url)
 	cacheDir, err := util.CacheDir()
 	if err != nil {
 		return "", err
 	}
-	cachePath := filepath.Join(cacheDir, fmt.Sprintf("%s-%s", template, hashRepoUrl(url)))
 
-	// Make sure the cache directory exists
-	os.MkdirAll(cacheDir, os.ModePerm)
+	cachePath, err := CachePath(url)
+	if err != nil {
+		return "", err
+	}
 
 	// Check if the template already cached
 	if _, err := os.Stat(cachePath); err == nil {
@@ -57,6 +57,20 @@ func Clone(url string) (string, error) {
 
 func CompareCommitHash(path, url string) bool {
 	return false
+}
+
+func CachePath(url string) (string, error) {
+	template := extractRepoName(url)
+	cacheDir, err := util.CacheDir()
+	if err != nil {
+		return "", err
+	}
+	cachePath := filepath.Join(cacheDir, fmt.Sprintf("%s-%s", template, hashRepoUrl(url)))
+
+	// Make sure the cache directory exists
+	os.MkdirAll(cacheDir, os.ModePerm)
+
+	return cachePath, nil
 }
 
 func extractRepoName(url string) string {
