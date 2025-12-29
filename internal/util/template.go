@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"malguem/internal/config"
+	"malguem/internal/model"
 	"malguem/internal/prompt"
 	"os"
 	"path/filepath"
@@ -19,11 +20,12 @@ var pathMustachePattern = regexp.MustCompile(`{{\s*(\w+)\s*}}`)
 
 func RenderTemplate(source, output string) error {
 	// Trim prefixes of './' inside the
+	// todo: add these into separate validateConfig in the make.go
 	source = strings.TrimPrefix(source, "./")
+	output = strings.TrimPrefix(output, "./")
 
-	// Read config `contract.yaml`
-	contractPath := filepath.Join(source, "contract.yaml")
-	contract, err := config.ReadContract(contractPath)
+	// Validate contract
+	contract, err := validateContract(source)
 	if err != nil {
 		return err
 	}
@@ -40,27 +42,34 @@ func RenderTemplate(source, output string) error {
 		inputs[key] = inputPrompt
 	}
 
-	// Make sure the `output` directory exists
-	err = os.MkdirAll(output, os.ModePerm)
+	// Create the temp dir to holds rendered result
+	tempDir, err := os.MkdirTemp(".", "malguem-make-*")
 	if err != nil {
 		return err
 	}
+	defer os.RemoveAll(tempDir)
 
 	// Walk every file and folder in `source` directory
-	return filepath.Walk(source, func(path string, info fs.FileInfo, err error) error {
+	err = filepath.Walk(source, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
 		// Skip to render root directory
-		// Skip to render `contract.yaml` file
+		// also skip to render `contract.yaml` file
 		if path == source || filepath.Base(path) == "contract.yaml" {
 			return nil
 		}
 
+		// Validate template content first
+		err = validateTemplate(source, path, inputs, info.IsDir())
+		if err != nil {
+			return err
+		}
+
 		processedPath := ""
 
-		// Render mustache template in the path
+		// Format file path with proper type cases before rendering the template
 		if info.IsDir() {
 			processedPath = preprocessPath(path, inputs, contract.DirCase)
 		} else {
@@ -80,10 +89,10 @@ func RenderTemplate(source, output string) error {
 		// Trim prefixes from `path` in `processedPath`, so it only yields variable name
 		processedPath = strings.TrimPrefix(processedPath, source)
 
-		// Check if walked info is directory
-		// Then make sure to create directory
+		//Check if walked info is directory
+		//Then make sure to create directory
 		if info.IsDir() {
-			err = os.MkdirAll(filepath.Join(output, processedPath), os.ModePerm)
+			err = os.MkdirAll(filepath.Join(tempDir, processedPath), os.ModePerm)
 			if err != nil {
 				return err
 			}
@@ -91,15 +100,114 @@ func RenderTemplate(source, output string) error {
 			return nil
 		}
 
-		// Render mustache template of the content
-		outputPath := filepath.Join(output, processedPath)
+		// Render mustache template of the content into `tempDir`
+		outputPath := filepath.Join(tempDir, processedPath)
 		err = renderMustacheTemplate(path, outputPath, inputs)
+		if err != nil {
+			return err
+		}
+
+		// Validate rendered result
+		err = validateResult(outputPath)
 		if err != nil {
 			return err
 		}
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	// Commit the template rendering
+	return commit(tempDir, output)
+}
+
+// Validate contract file of `contract.yaml`
+func validateContract(source string) (*model.Contract, error) {
+	// Ensure `contract.yaml` is present in `source` path
+	contractPath := filepath.Join(source, "contract.yaml")
+	if _, err := os.Stat(contractPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("`contract.yaml` file does not exist in '%s'", source)
+	}
+	contract, err := config.ReadContract(contractPath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure `contract.yaml` has name
+	if contract.Name == "" {
+		return nil, fmt.Errorf("`name` is empty in the contract")
+	}
+
+	// Ensure `contract.yaml` has proper `file_case`
+	if !slices.Contains(TypeCases, contract.FileCase) {
+		return nil, fmt.Errorf("`file_case` in contract is invalid")
+	}
+
+	// Ensure `contract.yaml` has proper `dir_case`
+	if !slices.Contains(TypeCases, contract.DirCase) {
+		return nil, fmt.Errorf("`dir_case` in contract is invalid")
+	}
+
+	// Ensure `contract.yaml` has empty `variables`
+	if len(contract.Variables) < 1 {
+		return nil, fmt.Errorf("contract does not have any `variables`")
+	}
+
+	return contract, nil
+}
+
+// Validate mustache template in content
+func validateTemplate(base, path string, data map[string]string, isDirectory bool) error {
+	// Get relative path of the file
+	relativePath, err := filepath.Rel(base, path)
+	if err != nil {
+		return err
+	}
+	// Return error if there's unsafe path
+	if strings.HasPrefix(relativePath, "..") || strings.HasPrefix(relativePath, ".") {
+		return fmt.Errorf("unsafe path in %s", relativePath)
+	}
+	// Check if `relativePath` has mustache opening and closing tag
+	if strings.Contains(relativePath, "{{") && strings.Contains(relativePath, "}}") {
+		// Validate mustache syntax
+		return ValidateMustacheSyntax(path, data, isDirectory)
+	}
+
+	return nil
+}
+
+// Validate rendered result
+func validateResult(output string) error {
+	//No path traversal
+	fileName := filepath.Base(output)
+	if strings.Contains(fileName, "{{") || strings.Contains(fileName, "}}") {
+		return fmt.Errorf("unrendered mustache template in path, check your template again\n")
+	}
+	// Check if there's unrendered {{ or }} inside file's content
+	file, err := os.ReadFile(output)
+	if err != nil {
+		return err
+	}
+	if mustacheBlockPattern.Match(file) {
+		return fmt.Errorf("unrendered mustache template inside content, check your template again\n")
+	}
+
+	return nil
+}
+
+// Commit rendered template in `temp` into `output`
+func commit(temp, output string) error {
+	parentOutput := filepath.Dir(output)
+	// Make sure the `parentOutput` directory exists first
+	os.MkdirAll(parentOutput, os.FileMode(0755))
+
+	// Check if `output` is already exists, if it does then remove the old one before renaming
+	if _, err := os.Stat(output); err == nil {
+		os.RemoveAll(output)
+	}
+	return os.Rename(temp, output)
 }
 
 func renderMustacheTemplate(source, output string, data map[string]string) error {
@@ -153,20 +261,14 @@ func preprocessContent(contentString string, data map[string]string) string {
 		}
 
 		// Extract format and variable from mustache template
-		firstTagFormat, variable, secondTagFormat := matches[1], matches[2], matches[3]
-
-		if !slices.Contains(TypeCases, firstTagFormat) || firstTagFormat != secondTagFormat {
-			fmt.Printf("\nFormat tag invalid, please check your template again. For correct template tag, please visit ...\n")
-			// Rollout the generated code before exit
-			os.Exit(1)
-		}
+		tag, variable := matches[1], matches[2]
 
 		value, isExists := data[variable]
 		if !isExists {
 			return match
 		}
 
-		return formatCase(value, firstTagFormat)
+		return formatCase(value, tag)
 	})
 }
 

@@ -36,8 +36,8 @@ var makeCommand = &cobra.Command{
 
 		// Read from output `template` directory
 		templatePath := template.Path
+		// If not found in the output `template` directory, then read form cache
 		if _, err := os.Stat(templatePath); err != nil {
-			// If not found in the output `template` directory, then read form cache
 			templateUrl := template.Remote.Url
 			cachePath, err := remote.CachePath(templateUrl)
 			if err != nil {
@@ -61,7 +61,7 @@ var makeCommand = &cobra.Command{
 		// Generate code from template
 		err = util.RenderTemplate(templatePath, template.Output)
 		if err != nil {
-			fmt.Printf("Error: %v", err)
+			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)
 		}
 	},
