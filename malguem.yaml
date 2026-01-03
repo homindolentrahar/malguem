@@ -1,15 +1,5 @@
 name: malguem
 templates:
-  small-test-repo:
-    remote:
-      url: https://github.com/rtyley/small-test-repo.git
-    path: template/small-test-repo
-    output: ./out/small-test-repo
-  test-repo:
-    remote:
-      url: https://github.com/zpqrtbnk/test-repo
-    path: template/test-repo
-    output: ./out/test-repo
   nyang:
     path: template/nyang
     output: ./out/nyang

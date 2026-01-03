@@ -1,12 +1,15 @@
 package util
 
 import (
+	"regexp"
 	"strings"
 	"unicode"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
+
+var typeCasePattern = regexp.MustCompile(`{{#(\w+)}}(\w+){{/(\w+)}}`)
 
 const (
 	Pascal string = "pascal_case"
